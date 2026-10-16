@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { validateChordPro } from '@/lib/chordpro/validator';
 import { validateSongLicense, LicenseFormData } from '@/lib/songs/license';
@@ -164,18 +165,35 @@ export async function publishSongAction(input: PublishSongInput) {
       }
     }
 
-    // 9. Sinh slug duy nhất không dấu
+    // 9. Sinh slug duy nhất không dấu (dùng adminClient để đọc toàn bộ kho bài kể cả bài chờ duyệt)
     const baseSlug = titleToSlug(input.title);
-    const { data: similarSongs } = await supabase
-      .from('songs')
-      .select('slug')
-      .ilike('slug', `${baseSlug}%`);
+    let existingSlugs: string[] = [];
 
-    const existingSlugs = (similarSongs || []).map((s) => s.slug);
-    const finalSlug = resolveUniqueSlug(baseSlug, existingSlugs);
+    try {
+      const adminClient = createAdminClient();
+      const { data: allSimilar } = await adminClient
+        .from('songs')
+        .select('slug')
+        .ilike('slug', `${baseSlug}%`);
+
+      if (allSimilar) {
+        existingSlugs = allSimilar.map((s) => s.slug);
+      }
+    } catch {
+      const { data: similarSongs } = await supabase
+        .from('songs')
+        .select('slug')
+        .ilike('slug', `${baseSlug}%`);
+
+      if (similarSongs) {
+        existingSlugs = similarSongs.map((s) => s.slug);
+      }
+    }
+
+    let finalSlug = resolveUniqueSlug(baseSlug, existingSlugs);
 
     // 10. Chèn bài hát mới (Mặc định is_verified = false, takedown_status = 'none')
-    const { data: newSong, error: insertErr } = await supabase
+    let { data: newSong, error: insertErr } = await supabase
       .from('songs')
       .insert({
         title: input.title.trim(),
@@ -199,9 +217,43 @@ export async function publishSongAction(input: PublishSongInput) {
       .select('id, slug')
       .single();
 
+    // Tự động giải quyết xung đột slug nếu có race condition (trùng songs_slug_key)
+    if (insertErr && (insertErr.code === '23505' || insertErr.message?.includes('songs_slug_key'))) {
+      const retrySlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
+      const retryRes = await supabase
+        .from('songs')
+        .insert({
+          title: input.title.trim(),
+          slug: retrySlug,
+          content: input.content.trim(),
+          key: input.key.trim() || 'C',
+          chords: chordValidation.chords,
+          artist_id: artistId,
+          rhythm_id: rhythmId,
+          genre_id: genreId,
+          license_type: input.license.license_type,
+          rights_holder: input.license.rights_holder?.trim() || null,
+          source_url: input.license.source_url?.trim() || null,
+          license_note: input.license.license_note?.trim() || null,
+          is_verified: false,
+          takedown_status: 'none',
+          created_by: user.id,
+          terms_agreed_at: new Date().toISOString(),
+          terms_agreed_by: user.id,
+        })
+        .select('id, slug')
+        .single();
+
+      newSong = retryRes.data;
+      insertErr = retryRes.error;
+    }
+
     if (insertErr || !newSong) {
       console.error('Error inserting song:', insertErr);
-      return { success: false, error: insertErr?.message || 'Lỗi khi lưu bài hát vào cơ sở dữ liệu.' };
+      const friendlyError = insertErr?.message?.includes('songs_slug_key')
+        ? 'Tên bài hát bị trùng lặp với bài đã có trên hệ thống. Vui lòng bấm Đăng bài lại.'
+        : insertErr?.message || 'Lỗi khi lưu bài hát vào cơ sở dữ liệu.';
+      return { success: false, error: friendlyError };
     }
 
     revalidatePath('/bai-cua-toi');

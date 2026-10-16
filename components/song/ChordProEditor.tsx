@@ -245,7 +245,11 @@ export default function ChordProEditor({
     setLoading(false);
 
     if (!res.success) {
-      setServerError(res.error || 'Có lỗi xảy ra khi lưu bài hát.');
+      let errText = res.error || 'Có lỗi xảy ra khi lưu bài hát.';
+      if (errText.includes('duplicate key') || errText.includes('songs_slug_key')) {
+        errText = 'Đường dẫn bài hát bị trùng lặp. Vui lòng bấm Đăng bài lại để hệ thống tự động phân biệt.';
+      }
+      setServerError(errText);
     } else {
       setIsDirty(false);
       if (mode === 'create' && typeof window !== 'undefined') {
