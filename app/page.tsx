@@ -41,9 +41,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       if (gData) genres = gData;
 
       // 2. Tra cứu bài hát: Tìm kiếm không dấu RPC search_songs hoặc Tab Hot RPC get_hot_songs
-      if (q.trim()) {
+      const cleanQ = q.trim().replace(/\s+/g, ' ');
+      if (cleanQ) {
         const { data, error } = await supabase.rpc('search_songs', {
-          p_query: q.trim(),
+          p_query: cleanQ,
           p_limit: PAGE_SIZE,
           p_offset: offset,
         });

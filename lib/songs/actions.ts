@@ -96,9 +96,11 @@ export async function publishSongAction(input: PublishSongInput) {
   }
 
   try {
+    const cleanTitle = input.title.trim().replace(/\s+/g, ' ');
+
     // 6. Xử lý Nghệ sĩ (Artist)
     let artistId: string | null = null;
-    const cleanArtist = input.artist_name.trim();
+    const cleanArtist = input.artist_name.trim().replace(/\s+/g, ' ');
     if (cleanArtist) {
       const artistSlug = titleToSlug(cleanArtist);
       const { data: existingArtist } = await supabase
@@ -166,7 +168,7 @@ export async function publishSongAction(input: PublishSongInput) {
     }
 
     // 9. Sinh slug duy nhất không dấu (dùng adminClient để đọc toàn bộ kho bài kể cả bài chờ duyệt)
-    const baseSlug = titleToSlug(input.title);
+    const baseSlug = titleToSlug(cleanTitle);
     let existingSlugs: string[] = [];
 
     try {
@@ -196,7 +198,7 @@ export async function publishSongAction(input: PublishSongInput) {
     let { data: newSong, error: insertErr } = await supabase
       .from('songs')
       .insert({
-        title: input.title.trim(),
+        title: cleanTitle,
         slug: finalSlug,
         content: input.content.trim(),
         key: input.key.trim() || 'C',
@@ -223,7 +225,7 @@ export async function publishSongAction(input: PublishSongInput) {
       const retryRes = await supabase
         .from('songs')
         .insert({
-          title: input.title.trim(),
+          title: cleanTitle,
           slug: retrySlug,
           content: input.content.trim(),
           key: input.key.trim() || 'C',
