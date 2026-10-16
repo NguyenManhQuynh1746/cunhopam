@@ -87,6 +87,8 @@ create index if not exists idx_admin_logs_created on public.admin_logs (created_
 -- 5. TRIGGER BẢO VỆ DỮ LIỆU & RÀNG BUỘC TOÀN VẸN
 
 -- 5.1. Chặn người dùng tự thay đổi profiles.role
+drop trigger if exists on_profile_role_update on public.profiles;
+
 create or replace function public.trg_protect_profile_role()
 returns trigger
 language plpgsql
@@ -94,7 +96,7 @@ security definer
 set search_path = public, extensions, pg_temp
 as $$
 begin
-  if new.role is distinct from old.role and not public.is_admin() then
+  if auth.uid() is not null and new.role is distinct from old.role and not public.is_admin() then
     raise exception 'Người dùng không được phép tự sửa quyền tài khoản (role).';
   end if;
   return new;

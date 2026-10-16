@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { LogOut, ShieldCheck, User, Mail, Calendar, Sparkles } from 'lucide-react';
@@ -142,6 +143,19 @@ export default function ProfilePage() {
             </span>
           </div>
         </div>
+
+        {/* Truy cập Admin nếu có quyền */}
+        {isAdmin && (
+          <div className="border-t border-line pt-4">
+            <Link
+              href="/admin"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-sm font-bold shadow-xs transition"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Mở Trang quản trị Admin (/admin)</span>
+            </Link>
+          </div>
+        )}
 
         {/* Nút đăng xuất */}
         <div className="border-t border-line pt-5 flex justify-end">
