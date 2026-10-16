@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { parseChordPro, slugify } from '../lib/chordpro';
+import { normalizeChordName } from '../lib/chords/normalize';
 
 function loadEnv() {
   const envPath = path.resolve(process.cwd(), '.env.local');
@@ -162,6 +163,28 @@ async function importSongs() {
       await supabase
         .from('song_artists')
         .upsert({ song_id: upsertedSong.id, artist_id: artistId, role: 'performer' });
+    }
+
+    // 6. Tự động điền bảng song_chords từ lời ChordPro (đã chuẩn hoá, bỏ nốt bass)
+    if (upsertedSong) {
+      const chordMatches = Array.from(song.content.matchAll(/\[([^\]]+)\]/g));
+      const normalizedChords = Array.from(
+        new Set(
+          chordMatches
+            .map((m) => normalizeChordName(m[1].trim()))
+            .filter((c) => c && c.length > 0)
+        )
+      );
+
+      // Xoá danh sách hợp âm cũ và chèn mới
+      await supabase.from('song_chords').delete().eq('song_id', upsertedSong.id);
+      if (normalizedChords.length > 0) {
+        const chordRows = normalizedChords.map((chord_name) => ({
+          song_id: upsertedSong.id,
+          chord_name,
+        }));
+        await supabase.from('song_chords').insert(chordRows);
+      }
     }
 
     console.log(

@@ -38,11 +38,11 @@ async function importChords() {
     auth: { persistSession: false },
   });
 
-  // Tải dữ liệu guitar từ chords-db
+  // Tải dữ liệu guitar và ukulele từ chords-db
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const chordsDb = require('@tombatossals/chords-db/lib/guitar.json');
-  const chordKeys = Object.keys(chordsDb.chords);
-  console.log(`📖 Tìm thấy ${chordKeys.length} họ nốt hợp âm trong chords-db.`);
+  const guitarDb = require('@tombatossals/chords-db/lib/guitar.json');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const ukuleleDb = require('@tombatossals/chords-db/lib/ukulele.json');
 
   const recordsToUpsert: Array<{
     instrument: string;
@@ -51,9 +51,9 @@ async function importChords() {
     positions: unknown;
   }> = [];
 
-  for (const rootKey of chordKeys) {
-    const chordList = chordsDb.chords[rootKey];
-    for (const item of chordList) {
+  // 1. Nạp hợp âm Guitar
+  for (const rootKey of Object.keys(guitarDb.chords)) {
+    for (const item of guitarDb.chords[rootKey]) {
       recordsToUpsert.push({
         instrument: 'guitar',
         root: item.key,
@@ -63,7 +63,19 @@ async function importChords() {
     }
   }
 
-  console.log(`📦 Tổng số hợp âm cần upsert: ${recordsToUpsert.length}`);
+  // 2. Nạp hợp âm Ukulele
+  for (const rootKey of Object.keys(ukuleleDb.chords)) {
+    for (const item of ukuleleDb.chords[rootKey]) {
+      recordsToUpsert.push({
+        instrument: 'ukulele',
+        root: item.key,
+        suffix: item.suffix,
+        positions: item.positions,
+      });
+    }
+  }
+
+  console.log(`📖 Tìm thấy tổng cộng ${recordsToUpsert.length} hợp âm (gồm cả Guitar & Ukulele).`);
 
   // Thực hiện upsert theo từng lô (batch size 100) để tối ưu hiệu năng
   const batchSize = 100;
@@ -83,7 +95,7 @@ async function importChords() {
     }
   }
 
-  console.log(`\n✅ Hoàn tất import ${successCount} hợp âm guitar vào Supabase thành công!`);
+  console.log(`\n✅ Hoàn tất import ${successCount} hợp âm Guitar & Ukulele vào Supabase thành công!`);
 }
 
 importChords().catch(err => {

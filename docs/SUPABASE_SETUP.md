@@ -157,4 +157,51 @@ VIEW_HASH_SECRET=cunhopam-secure-view-salt-random-string-2026
    - Đảm bảo policy `INSERT` của `comments` có điều kiện `auth.uid() = user_id`.
    - Bổ sung cột `ip_address` cho bảng `reports`.
 
+---
+
+## 8. Cập nhật Cơ sở Dữ liệu Giai đoạn 3 (Migration: Thư viện Hợp âm & Tìm bài theo Hợp âm)
+
+Ở Giai đoạn 3, hệ thống bổ sung:
+- Hỗ trợ 2 loại nhạc cụ: **Guitar (6 dây)** và **Ukulele (4 dây: G4, C4, E4, A4)**.
+- Bảng `song_chords` (song_id, chord_name) với trigger tự động đồng bộ khi bài hát được thêm mới hoặc chỉnh sửa ChordPro.
+- Bảng `user_known_chords` lưu danh sách hợp âm người dùng đã biết (kèm RLS phân quyền theo user).
+- Hàm RPC `find_songs_by_chords(p_known_chords text[], p_limit int)` chạy hoàn toàn ở phía database PostgreSQL, lọc bài đã duyệt, phân loại "Chơi được ngay" (`missing_count = 0`) và "Chỉ thiếu 1 hợp âm" (`missing_count = 1`).
+
+### A. Chạy file Migration trên Supabase SQL Editor
+1. Mở Supabase -> Chọn **SQL Editor** -> Bấm **"New query"**.
+2. Mở file [supabase/migrations/02_phase3_song_chords_find.sql](file:///c:/Users/pc/.antigravity/cunhopam/supabase/migrations/02_phase3_song_chords_find.sql), sao chép toàn bộ nội dung và dán vào SQL Editor.
+3. Bấm **"Run"** để thực thi migration.
+
+### B. Cập nhật Dữ liệu Hợp âm & Bài hát
+1. Cập nhật kho thế bấm gồm cả Guitar và Ukulele:
+   ```bash
+   npm run import:chords
+   ```
+2. Đồng bộ danh sách hợp âm của các bài hát:
+   ```bash
+   npm run import:songs -- --verify
+   ```
+
+### C. Câu lệnh SQL kiểm tra hàm RPC `find_songs_by_chords`
+Bạn có thể mở SQL Editor trên Supabase và chạy thử câu lệnh sau để kiểm tra:
+
+```sql
+-- 1. Tìm các bài chơi được với các hợp âm C, Am, F, G, Dm
+SELECT 
+    title,
+    key,
+    missing_count,
+    missing_chords,
+    total_song_chords
+FROM find_songs_by_chords(ARRAY['C', 'Am', 'F', 'G', 'Dm'], 20);
+
+-- 2. Kiểm tra trường hợp chuẩn hoá (ví dụ tìm bằng 'A#' hoặc 'Bb', 'C/G')
+SELECT 
+    title,
+    missing_count,
+    missing_chords
+FROM find_songs_by_chords(ARRAY['C/G', 'Am', 'Bb'], 20);
+```
+
+
 

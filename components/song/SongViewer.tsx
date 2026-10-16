@@ -9,6 +9,7 @@ import ChordPopup from './ChordPopup';
 import FavoriteButton from './FavoriteButton';
 import CommentSection, { CommentItem } from './CommentSection';
 import ReportModal from './ReportModal';
+import { suggestCapo } from '@/lib/chords/easy';
 import {
   Printer,
   Play,
@@ -22,6 +23,7 @@ import {
   ShieldCheck,
   ExternalLink,
   FoldVertical,
+  Sparkles,
 } from 'lucide-react';
 
 export interface SongDetailData {
@@ -74,6 +76,9 @@ export default function SongViewer({
 
   // Chế độ gộp dòng: hiển thị hợp âm ngay trong dòng lời (Inline mode)
   const [isInlineMode, setIsInlineMode] = useState(false);
+
+  // Chế độ Hợp âm dễ & Gợi ý kẹp Capo
+  const [isEasyMode, setIsEasyMode] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -174,17 +179,40 @@ export default function SongViewer({
     };
   }, [isScrolling, scrollSpeed]);
 
-  // 9. Tính toán các hợp âm sau khi đổi tông
+  // 9. Tính toán các hợp âm sau khi đổi tông & Gợi ý hợp âm dễ (Capo)
   const originalKey = song.key || 'C';
   const currentKeyName = useMemo(() => {
     return transposeChord(originalKey, transpose, notation);
   }, [originalKey, transpose, notation]);
 
-  // Đổi tông toàn bộ nội dung bài hát
+  // Danh sách hợp âm hiện tại ở tông đang hiển thị (dùng tiếng Anh để phân tích thế bấm mở)
+  const currentChordsEn = useMemo(() => {
+    return (song.chords || []).map((c) => transposeChord(c, transpose, 'en'));
+  }, [song.chords, transpose]);
+
+  // Gợi ý kẹp Capo để có hợp âm dễ bấm nhất (Capo 0 - 5)
+  const capoSuggestion = useMemo(() => {
+    return suggestCapo(currentChordsEn, transposeChord(originalKey, transpose, 'en'));
+  }, [currentChordsEn, originalKey, transpose]);
+
+  // Độ dịch tông thực tế: nếu bật chế độ hợp âm dễ và có Capo > 0, thế bấm hạ tương ứng capoFret
+  const effectiveTranspose = useMemo(() => {
+    if (isEasyMode && capoSuggestion && capoSuggestion.capoFret > 0) {
+      return transpose - capoSuggestion.capoFret;
+    }
+    return transpose;
+  }, [isEasyMode, capoSuggestion, transpose]);
+
+  // Tên giọng thế bấm hiển thị
+  const effectiveKeyName = useMemo(() => {
+    return transposeChord(originalKey, effectiveTranspose, notation);
+  }, [originalKey, effectiveTranspose, notation]);
+
+  // Đổi tông toàn bộ nội dung bài hát theo effectiveTranspose
   const transposedContent = useMemo(() => {
-    if (transpose === 0 && notation === 'en') return song.content;
-    return transposeLyrics(song.content, transpose, notation, originalKey);
-  }, [song.content, transpose, notation, originalKey]);
+    if (effectiveTranspose === 0 && notation === 'en') return song.content;
+    return transposeLyrics(song.content, effectiveTranspose, notation, originalKey);
+  }, [song.content, effectiveTranspose, notation, originalKey]);
 
   // Phân tích thành các dòng hiển thị hợp âm nằm trên lời
   const renderedLines: RenderedLine[] = useMemo(() => {
@@ -193,8 +221,8 @@ export default function SongViewer({
 
   // Danh sách các hợp âm độc nhất hiện có trong bài đã đổi tông
   const songChordsList = useMemo(() => {
-    return (song.chords || []).map((c) => transposeChord(c, transpose, notation));
-  }, [song.chords, transpose, notation]);
+    return (song.chords || []).map((c) => transposeChord(c, effectiveTranspose, notation));
+  }, [song.chords, effectiveTranspose, notation]);
 
   const handlePrint = () => {
     window.print();
@@ -349,6 +377,25 @@ export default function SongViewer({
               {columns === 1 ? <Columns className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
               <span>{columns === 1 ? '2 cột' : '1 cột'}</span>
             </button>
+
+            {/* Nút Hợp âm dễ (Gợi ý Capo) */}
+            <button
+              onClick={() => setIsEasyMode((prev) => !prev)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                isEasyMode
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                  : 'bg-bg border-line text-ink hover:border-accent'
+              }`}
+              title={
+                isEasyMode
+                  ? 'Tắt gợi ý hợp âm dễ để về thế bấm gốc'
+                  : 'Gợi ý vị trí kẹp Capo và thế bấm hợp âm mở dễ chơi'
+              }
+              aria-pressed={isEasyMode}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isEasyMode ? 'Hợp âm dễ: Bật' : 'Hợp âm dễ'}</span>
+            </button>
           </div>
 
           {/* Nhóm Tự Cuộn (Auto Scroll) */}
@@ -386,6 +433,37 @@ export default function SongViewer({
           </div>
         </div>
 
+        {/* Banner Gợi ý Hợp âm dễ & Capo */}
+        {isEasyMode && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm animate-in fade-in duration-200">
+            <div className="flex items-start sm:items-center gap-2.5">
+              <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5 sm:mt-0" />
+              {capoSuggestion && capoSuggestion.capoFret > 0 ? (
+                <div>
+                  <span className="font-bold text-ink">Gợi ý Capo {capoSuggestion.capoFret}:</span>{' '}
+                  <span className="text-muted">
+                    Kẹp Capo ngăn <strong className="text-ink">{capoSuggestion.capoFret}</strong> và bấm theo thế giọng{' '}
+                    <strong className="text-accent">{effectiveKeyName}</strong>. Âm vang thực tế tương đương tông{' '}
+                    <strong className="text-ink">{currentKeyName}</strong>.
+                  </span>
+                </div>
+              ) : (
+                <div className="text-muted">
+                  <span className="font-bold text-ink">Hợp âm cơ bản:</span> Bài hát ở tông này đã gồm các thế bấm mở rất dễ chơi, không cần dùng Capo.
+                </div>
+              )}
+            </div>
+            {capoSuggestion && capoSuggestion.capoFret > 0 && (
+              <button
+                onClick={() => setIsEasyMode(false)}
+                className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-surface border border-line text-muted hover:text-ink hover:border-accent transition shrink-0"
+              >
+                Về hợp âm gốc
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Danh sách các hợp âm trong bài (Click để mở sơ đồ thế bấm) */}
         {songChordsList.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -407,7 +485,10 @@ export default function SongViewer({
       <div className="hidden print:block pb-4 border-b border-black text-black">
         <h1 className="text-2xl font-bold">{song.title}</h1>
         <div className="text-xs mt-1">
-          Nghệ sĩ: {song.artist_name || 'Truyền thống'} | Tông: {currentKeyName} | Điệu: {song.rhythm_name || 'Ballad'} | Nguồn: cunhopam.com
+          Nghệ sĩ: {song.artist_name || 'Truyền thống'} | Tông: {currentKeyName}
+          {isEasyMode && capoSuggestion && capoSuggestion.capoFret > 0
+            ? ` (Kẹp Capo ngăn ${capoSuggestion.capoFret} - bấm thế giọng ${effectiveKeyName})`
+            : ''} | Điệu: {song.rhythm_name || 'Ballad'} | Nguồn: cunhopam.com
         </div>
       </div>
 

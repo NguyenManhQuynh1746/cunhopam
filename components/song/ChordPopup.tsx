@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllChordPositions, renderChordSvg } from '@/lib/chords/diagram';
+import { getAllChordPositions } from '@/lib/chords/diagram';
 import { playFretPositions } from '@/lib/chords/audio';
 import { transposeChord } from '@/lib/chords/transpose';
+import ChordDiagramSvg, { ChordPositionProps } from '@/components/chord/ChordDiagramSvg';
 import { Volume2, X } from 'lucide-react';
 
 interface DbChordPosition {
@@ -11,6 +12,7 @@ interface DbChordPosition {
   fingers?: number[];
   barres?: number[];
   baseFret?: number;
+  capo?: boolean;
 }
 
 interface ChordPopupProps {
@@ -19,6 +21,7 @@ interface ChordPopupProps {
   onClose: () => void;
   notation: 'en' | 'vi';
   dbPositions?: DbChordPosition[] | null;
+  initialInstrument?: 'guitar' | 'ukulele';
 }
 
 export default function ChordPopup({
@@ -27,34 +30,50 @@ export default function ChordPopup({
   onClose,
   notation,
   dbPositions,
+  initialInstrument = 'guitar',
 }: ChordPopupProps) {
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [instrument, setInstrument] = useState<'guitar' | 'ukulele'>(initialInstrument);
+
+  // Đọc sở thích nhạc cụ từ localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cunhopam_instrument') as 'guitar' | 'ukulele';
+      if (saved) setInstrument(saved);
+    }
+  }, []);
 
   // Reset về vị trí đầu tiên khi đổi hợp âm
   useEffect(() => {
     setSelectedIdx(0);
-  }, [chordName]);
+  }, [chordName, instrument]);
+
+  const toggleInstrument = (inst: 'guitar' | 'ukulele') => {
+    setInstrument(inst);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cunhopam_instrument', inst);
+    }
+  };
 
   if (!isOpen || !chordName) return null;
 
-  // Lấy các thế bấm: Ưu tiên từ DB đã preload, nếu không có thì fallback sang thuật toán lib/chords
-  let positions = getAllChordPositions(chordName);
+  // Lấy danh sách thế bấm
+  let positions: ChordPositionProps[] = [];
 
   if (dbPositions && dbPositions.length > 0) {
-    // Chuyển format DB sang format diagram
-    positions = dbPositions.map((p, idx) => {
-      const positiveFrets = p.frets.filter((x) => x > 0);
-      const minFret = positiveFrets.length > 0 ? Math.min(...positiveFrets) : 1;
-      const baseFret = p.baseFret || (Math.max(...positiveFrets, 0) <= 5 ? 1 : minFret);
-      const barreFret = p.barres && p.barres.length > 0 ? p.barres[0] : 0;
-
-      return {
-        frets: p.frets,
-        title: idx === 0 ? 'Thế cơ bản' : `Thế bấm ${idx + 1}`,
-        barreFret,
-        barreStartString: 0,
-      };
-    });
+    positions = dbPositions.map((p) => ({
+      frets: p.frets,
+      fingers: p.fingers,
+      barres: p.barres,
+      baseFret: p.baseFret,
+      capo: p.capo,
+    }));
+  } else {
+    // Fallback guitar shapes từ lib/chords
+    positions = getAllChordPositions(chordName).map((p) => ({
+      frets: p.frets,
+      barres: p.barreFret > 0 ? [p.barreFret] : [],
+    }));
   }
 
   const currentPos = positions[selectedIdx] || positions[0];
@@ -62,13 +81,13 @@ export default function ChordPopup({
 
   const handlePlay = () => {
     if (currentPos && currentPos.frets) {
-      playFretPositions(currentPos.frets);
+      playFretPositions(currentPos.frets, instrument);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-100">
-      <div className="w-full max-w-xs rounded-3xl bg-surface border border-line p-5 shadow-2xl text-center space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
+      <div className="w-full max-w-xs rounded-3xl bg-surface border border-line p-5 shadow-2xl text-center space-y-3.5">
         <div className="flex items-center justify-between">
           <div className="text-left">
             <h3 className="text-2xl font-black text-ink">{displayName}</h3>
@@ -76,6 +95,31 @@ export default function ChordPopup({
               <span className="text-xs text-muted font-mono">{chordName}</span>
             )}
           </div>
+
+          {/* Công tắc chọn Guitar / Ukulele */}
+          <div className="flex items-center bg-bg p-0.5 rounded-xl border border-line text-xs font-semibold">
+            <button
+              onClick={() => toggleInstrument('guitar')}
+              className={`px-2 py-1 rounded-lg transition ${
+                instrument === 'guitar'
+                  ? 'bg-accent text-white shadow-xs'
+                  : 'text-muted hover:text-ink'
+              }`}
+            >
+              Guitar
+            </button>
+            <button
+              onClick={() => toggleInstrument('ukulele')}
+              className={`px-2 py-1 rounded-lg transition ${
+                instrument === 'ukulele'
+                  ? 'bg-accent text-white shadow-xs'
+                  : 'text-muted hover:text-ink'
+              }`}
+            >
+              Uke
+            </button>
+          </div>
+
           <button
             onClick={onClose}
             className="p-1 rounded-full text-muted hover:text-ink hover:bg-bg transition"
@@ -88,19 +132,10 @@ export default function ChordPopup({
         {/* Sơ đồ SVG phím đàn */}
         {currentPos ? (
           <div className="flex justify-center py-1">
-            <div
-              className="w-48 h-56 text-ink flex items-center justify-center [&_svg]:max-h-full"
-              dangerouslySetInnerHTML={{
-                __html: renderChordSvg({
-                  chordName,
-                  position: currentPos,
-                  baseFret:
-                    currentPos.frets.filter((x) => x > 0).length > 0 &&
-                    Math.max(...currentPos.frets.filter((x) => x > 0)) > 5
-                      ? Math.min(...currentPos.frets.filter((x) => x > 0))
-                      : 1,
-                }),
-              }}
+            <ChordDiagramSvg
+              position={currentPos}
+              instrument={instrument}
+              className="w-48 h-56"
             />
           </div>
         ) : (
@@ -113,13 +148,13 @@ export default function ChordPopup({
           className="w-full py-2.5 px-4 rounded-xl bg-accent text-white font-bold text-sm hover:bg-accent-dark transition flex items-center justify-center gap-2 shadow-sm"
         >
           <Volume2 className="w-4 h-4" />
-          <span>Nghe thử tiếng đàn</span>
+          <span>Nghe thử tiếng đàn ({instrument === 'ukulele' ? 'Ukulele' : 'Guitar'})</span>
         </button>
 
         {/* Chuyển đổi các thế bấm (nếu có nhiều thế bấm) */}
         {positions.length > 1 && (
           <div className="flex items-center justify-center gap-1.5 pt-1 overflow-x-auto no-scrollbar">
-            {positions.map((p, idx) => (
+            {positions.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedIdx(idx)}
@@ -129,7 +164,7 @@ export default function ChordPopup({
                     : 'text-muted hover:text-ink bg-bg'
                 }`}
               >
-                {p.title || `Thế ${idx + 1}`}
+                {`Thế ${idx + 1}`}
               </button>
             ))}
           </div>
@@ -138,4 +173,3 @@ export default function ChordPopup({
     </div>
   );
 }
-
