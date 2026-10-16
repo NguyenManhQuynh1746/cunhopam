@@ -14,13 +14,31 @@ function LoginForm() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [isUnconfirmed, setIsUnconfirmed] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const translateError = (msg: string) => {
+    const lower = msg.toLowerCase();
+    if (lower.includes('email not confirmed')) {
+      return 'Email này chưa được kích hoạt. Vui lòng kiểm tra hộp thư (kể cả mục Spam) để bấm link xác nhận, hoặc bấm nút "Gửi lại email xác nhận" bên dưới.';
+    }
+    if (lower.includes('invalid login credentials')) {
+      return 'Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại.';
+    }
+    if (lower.includes('user not found')) {
+      return 'Không tìm thấy tài khoản với email này. Bạn có thể đăng ký tài khoản mới.';
+    }
+    if (lower.includes('rate limit') || lower.includes('too many requests')) {
+      return 'Hệ thống nhận quá nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau 1-2 phút.';
+    }
+    return msg;
+  };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
+    setIsUnconfirmed(false);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -29,7 +47,9 @@ function LoginForm() {
       });
 
       if (error) {
-        setMessage({ type: 'error', text: error.message || 'Đăng nhập không thành công.' });
+        const isNotConfirmed = error.message.toLowerCase().includes('email not confirmed');
+        setIsUnconfirmed(isNotConfirmed);
+        setMessage({ type: 'error', text: translateError(error.message) });
       } else {
         setMessage({ type: 'success', text: 'Đăng nhập thành công! Đang chuyển hướng...' });
         const target = nextUrl.startsWith('/') ? nextUrl : '/';
@@ -37,9 +57,38 @@ function LoginForm() {
         router.refresh();
       }
     } catch {
-      setMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ Supabase. Vui lòng kiểm tra .env.local.' });
+      setMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ Supabase. Vui lòng kiểm tra kết nối mạng.' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setMessage({ type: 'error', text: 'Vui lòng nhập địa chỉ email trước.' });
+      return;
+    }
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) {
+        setMessage({ type: 'error', text: `Không thể gửi lại: ${translateError(error.message)}` });
+      } else {
+        setMessage({
+          type: 'success',
+          text: `Đã gửi lại liên kết kích hoạt đến ${email}. Vui lòng kiểm tra hộp thư đến và mục Spam.`,
+        });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Không thể gửi email xác nhận vào lúc này. Vui lòng thử lại sau.' });
+    } finally {
+      setResending(false);
     }
   };
 
@@ -77,14 +126,28 @@ function LoginForm() {
 
       {message && (
         <div
-          className={`p-3.5 rounded-2xl text-xs flex items-start gap-2 mb-5 ${
+          className={`p-3.5 rounded-2xl text-xs mb-5 ${
             message.type === 'error'
               ? 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-900'
               : 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300 border border-green-200 dark:border-green-900'
           }`}
         >
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-          <p className="leading-relaxed">{message.text}</p>
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="space-y-2 w-full">
+              <p className="leading-relaxed">{message.text}</p>
+              {isUnconfirmed && (
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={resending}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-medium rounded-full text-[11px] transition-colors disabled:opacity-50"
+                >
+                  {resending ? 'Đang gửi...' : 'Gửi lại email xác nhận'}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

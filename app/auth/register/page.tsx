@@ -16,6 +16,20 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
+  const translateRegisterError = (msg: string) => {
+    const lower = msg.toLowerCase();
+    if (lower.includes('already registered') || lower.includes('already exists')) {
+      return 'Email này đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác.';
+    }
+    if (lower.includes('password should be at least')) {
+      return 'Mật khẩu phải có ít nhất 6 ký tự.';
+    }
+    if (lower.includes('rate limit') || lower.includes('too many requests')) {
+      return 'Hệ thống nhận quá nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau vài phút.';
+    }
+    return msg;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -34,7 +48,7 @@ export default function RegisterPage() {
       });
 
       if (error) {
-        setMessage({ type: 'error', text: error.message || 'Đăng ký không thành công.' });
+        setMessage({ type: 'error', text: translateRegisterError(error.message) });
       } else if (data.session) {
         setMessage({ type: 'success', text: 'Đăng ký thành công! Đang chuyển hướng...' });
         router.push('/');
