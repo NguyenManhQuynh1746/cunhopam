@@ -87,22 +87,33 @@ export default async function SongDetailPage({ params }: Props) {
         // Lấy danh sách bình luận
         const { data: commentList } = await supabase
           .from('comments')
-          .select(`
-            id, song_id, user_id, content, created_at,
-            profile:profiles(display_name, avatar_url)
-          `)
+          .select('id, song_id, user_id, content, created_at')
           .eq('song_id', songData.id)
           .order('created_at', { ascending: false });
 
-        if (commentList) {
-          comments = commentList.map((c: any) => ({
-            id: c.id,
-            song_id: c.song_id,
-            user_id: c.user_id,
-            content: c.content,
-            created_at: c.created_at,
-            profile: Array.isArray(c.profile) ? c.profile[0] : c.profile,
-          }));
+        if (commentList && commentList.length > 0) {
+          const userIds = Array.from(new Set(commentList.map((c) => c.user_id)));
+          const { data: userProfiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .in('id', userIds);
+
+          const profileMap = new Map((userProfiles || []).map((p) => [p.id, p]));
+
+          comments = commentList.map((c: any) => {
+            const p = profileMap.get(c.user_id);
+            return {
+              id: c.id,
+              song_id: c.song_id,
+              user_id: c.user_id,
+              content: c.content,
+              created_at: c.created_at,
+              profile: {
+                display_name: p?.full_name || 'Thành viên',
+                avatar_url: p?.avatar_url || null,
+              },
+            };
+          });
         }
 
         // Preload toàn bộ các hợp âm guitar từ bảng chords
