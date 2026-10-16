@@ -83,11 +83,21 @@ export default function SongViewer({
   // 6. Modal báo lỗi / khiếu nại
   const [isReportOpen, setIsReportOpen] = useState(false);
 
-  // 7. Ghi nhận lượt xem 1 lần duy nhất (React Strict Mode deduping)
+  // 7. Ghi nhận lượt xem 1 lần duy nhất (React Strict Mode & Session deduping)
   const hasRecordedView = useRef(false);
   useEffect(() => {
     if (hasRecordedView.current) return;
     hasRecordedView.current = true;
+
+    // Kiểm tra sessionStorage để tránh gọi trùng khi React Strict Mode remount hoặc chuyển tab
+    const sessionKey = `viewed_song_${song.id}`;
+    if (typeof window !== 'undefined' && sessionStorage.getItem(sessionKey)) {
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(sessionKey, '1');
+    }
 
     fetch(`/api/songs/${song.id}/view`, {
       method: 'POST',

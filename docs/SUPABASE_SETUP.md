@@ -52,6 +52,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # Supabase Service Role (CHỈ dùng cho script import / server task)
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Khóa bí mật băm IP + User-Agent tính lượt xem (CHỈ dùng phía server)
+VIEW_HASH_SECRET=cunhopam-secure-view-salt-random-string-2026
 ```
 
 ---
@@ -149,5 +152,9 @@ VIEW_HASH_SECRET=cunhopam-secure-view-salt-random-string-2026
    - Tạo hàm RPC `search_songs(p_query, p_limit, p_offset)` tìm kiếm không dấu cả tên bài và nghệ sĩ.
    - Kích hoạt trigger `check_comment_rate_limit()` chống spam tối đa 5 bình luận/phút và tối đa 1.000 ký tự.
    - Seed dữ liệu điệu và thể loại với slug URL chuẩn không dấu.
+5. Tiếp tục mở file [supabase/migrations/02_phase2_security_fixes.sql](file:///c:/Users/pc/.antigravity/cunhopam/supabase/migrations/02_phase2_security_fixes.sql), dán vào SQL Editor và bấm **"Run"** để kích hoạt các ràng buộc bảo mật:
+   - Cấp quyền rõ ràng `GRANT EXECUTE` cho `service_role` và `REVOKE` hoàn toàn đối với `public`, `anon`, `authenticated`.
+   - Đảm bảo policy `INSERT` của `comments` có điều kiện `auth.uid() = user_id`.
+   - Bổ sung cột `ip_address` cho bảng `reports`.
 
 
