@@ -31,15 +31,27 @@ export function Header() {
           </Link>
 
           {/* Ô tìm kiếm */}
-          <div className="flex-1 max-w-md ml-auto relative">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const form = e.currentTarget;
+              const input = form.elements.namedItem('q') as HTMLInputElement;
+              if (input) {
+                const val = input.value.trim();
+                window.location.href = val ? `/?q=${encodeURIComponent(val)}` : '/';
+              }
+            }}
+            className="flex-1 max-w-md ml-auto relative"
+          >
             <Search className="w-4 h-4 text-muted absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
+              name="q"
               type="search"
               placeholder="Tìm bài hát, ca sĩ..."
               aria-label="Tìm kiếm bài hát"
               className="w-full bg-surface border border-line rounded-full py-1.5 sm:py-2 pl-9 sm:pl-10 pr-4 text-xs sm:text-sm text-ink placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent transition-all"
             />
-          </div>
+          </form>
 
           {/* Nút đổi cách gọi tên nốt (C D E / Đô Rê Mi) */}
           <button

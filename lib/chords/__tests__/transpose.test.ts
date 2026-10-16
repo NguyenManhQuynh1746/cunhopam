@@ -32,9 +32,23 @@ describe('transposeChord', () => {
     expect(transposeChord('F#m7', -12)).toBe('F#m7');
   });
 
-  it('dịch tông slash chords (G/B, C/E)', () => {
+  it('dịch tông slash chords (G/B, C/E, C/G, D/F#)', () => {
     expect(transposeChord('G/B', 2)).toBe('A/C#');
     expect(transposeChord('C/E', 1)).toBe('C#/F');
+    expect(transposeChord('C/G', 2)).toBe('D/A');
+    expect(transposeChord('D/F#', 2)).toBe('E/G#');
+    expect(transposeChord('D/F#', -2)).toBe('C/E');
+  });
+
+  it('chọn đúng cách ghi nốt giáng (Bb thay vì A#) trong ngữ cảnh tông F hoặc flat keys', () => {
+    // Trong tông F, nốt bậc 4 hoặc nốt A tăng 1 bán âm phải là Bb
+    expect(transposeChord('A', 1, 'en', 'F')).toBe('Bb');
+    expect(transposeChord('Am', 1, 'en', 'F')).toBe('Bbm');
+    // Khi dịch bài từ C sang F (+5 bán âm): hợp âm F trong C sẽ trở thành Bb trong F
+    const lyricsInC = '[C]Hát mừng [F]ngày vui';
+    const lyricsInF = transposeLyrics(lyricsInC, 5, 'en', 'C');
+    expect(lyricsInF).toContain('[Bb]');
+    expect(lyricsInF).not.toContain('[A#]');
   });
 
   it('hỗ trợ chuyển đổi sang hệ tiếng Việt (Đô Rê Mi)', () => {

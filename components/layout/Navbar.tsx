@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { label: 'Bài hát', href: '/' },
   { label: 'Hợp âm', href: '/chords' },
   { label: 'Tìm theo hợp âm', href: '/find' },
-  { label: 'Playlist', href: '/playlist' },
+  { label: 'Bài đã lưu', href: '/da-luu' },
   { label: 'Điệu', href: '/rhythms' },
   { label: 'Thể loại', href: '/genres' },
 ];

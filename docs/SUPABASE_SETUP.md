@@ -125,3 +125,29 @@ Sau khi đã điền đầy đủ `.env.local`:
 
 Bây giờ bạn đã sẵn sàng trải nghiệm Cunhopam với cơ sở dữ liệu thật!
 
+---
+
+## 7. Cập nhật Cơ sở Dữ liệu Giai đoạn 2 (Migration: Lượt xem, Tab Hot & Tìm kiếm không dấu)
+
+Ở Giai đoạn 2, website bổ sung các tính năng nâng cao: tính lượt xem chống spam 30 phút, các tab Hot (hôm nay, tuần, tháng, mới đăng), tìm kiếm không phân biệt dấu tiếng Việt (`unaccent` + `pg_trgm`), và giới hạn tần suất bình luận (rate limiting).
+
+### A. Cấu hình biến môi trường `VIEW_HASH_SECRET`
+Thêm khóa bí mật vào file `.env.local` (chỉ dùng phía server, không có tiền tố `NEXT_PUBLIC_`):
+```env
+VIEW_HASH_SECRET=cunhopam-secure-view-salt-random-string-2026
+```
+
+### B. Chạy file Migration trên Supabase SQL Editor
+1. Mở trang quản trị Supabase -> Chọn mục **SQL Editor**.
+2. Bấm **"New query"**.
+3. Mở file [supabase/migrations/01_phase2_views_search_hot.sql](file:///c:/Users/pc/.antigravity/cunhopam/supabase/migrations/01_phase2_views_search_hot.sql), sao chép toàn bộ nội dung và dán vào SQL Editor.
+4. Bấm **"Run"** để thực thi:
+   - Kích hoạt extensions `unaccent`, `pg_trgm` và hàm `immutable_unaccent`.
+   - Tạo bảng `song_views` và các chỉ mục `(song_id, viewer_hash, viewed_at)` và `(viewed_at)`.
+   - Tạo hàm RPC `record_song_view(song_id, viewer_hash)` và thu hồi quyền gọi từ `anon` / `authenticated` (chỉ server gọi bằng `service_role`).
+   - Tạo hàm RPC `get_hot_songs(p_time_frame, p_limit, p_offset)` cho các tab hôm nay (24h), tuần (7d), tháng (30d), mới đăng (`published_at`).
+   - Tạo hàm RPC `search_songs(p_query, p_limit, p_offset)` tìm kiếm không dấu cả tên bài và nghệ sĩ.
+   - Kích hoạt trigger `check_comment_rate_limit()` chống spam tối đa 5 bình luận/phút và tối đa 1.000 ký tự.
+   - Seed dữ liệu điệu và thể loại với slug URL chuẩn không dấu.
+
+
