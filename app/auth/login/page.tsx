@@ -14,6 +14,8 @@ function LoginForm() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [isUnconfirmed, setIsUnconfirmed] = useState(false);
   const [resending, setResending] = useState(false);
 
