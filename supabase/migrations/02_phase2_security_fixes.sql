@@ -22,3 +22,4 @@ create policy "Xoá bình luận của mình hoặc admin" on public.comments
 
 -- 3. BỔ SUNG CỘT IP_ADDRESS CHO BẢNG REPORTS (Kiểm toán khiếu nại công khai)
 alter table public.reports add column if not exists ip_address text;
+

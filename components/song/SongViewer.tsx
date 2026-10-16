@@ -21,6 +21,7 @@ import {
   Square,
   ShieldCheck,
   ExternalLink,
+  FoldVertical,
 } from 'lucide-react';
 
 export interface SongDetailData {
@@ -70,6 +71,26 @@ export default function SongViewer({
 
   // 3. Số cột hiển thị (1 hoặc 2)
   const [columns, setColumns] = useState<1 | 2>(1);
+
+  // Chế độ gộp dòng: hiển thị hợp âm ngay trong dòng lời (Inline mode)
+  const [isInlineMode, setIsInlineMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cunhopam_inline_mode');
+      if (saved === 'true') setIsInlineMode(true);
+    }
+  }, []);
+
+  const toggleInlineMode = () => {
+    setIsInlineMode((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cunhopam_inline_mode', String(next));
+      }
+      return next;
+    });
+  };
 
   // 4. Tự cuộn (Auto-scroll với requestAnimationFrame và fractional accumulator)
   const [isScrolling, setIsScrolling] = useState(false);
@@ -301,6 +322,25 @@ export default function SongViewer({
               </button>
             </div>
 
+            {/* Nút Gộp dòng (Inline) / Tách dòng */}
+            <button
+              onClick={toggleInlineMode}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition ${
+                isInlineMode
+                  ? 'bg-accent text-white border-accent shadow-xs'
+                  : 'bg-bg border-line text-ink hover:border-accent'
+              }`}
+              title={
+                isInlineMode
+                  ? 'Chuyển sang chế độ tách dòng (hợp âm nằm trên lời)'
+                  : 'Gộp hợp âm vào cùng một dòng với lời bài hát'
+              }
+              aria-pressed={isInlineMode}
+            >
+              <FoldVertical className="w-3.5 h-3.5" />
+              <span>{isInlineMode ? 'Tách dòng' : 'Gộp dòng'}</span>
+            </button>
+
             <button
               onClick={() => setColumns((prev) => (prev === 1 ? 2 : 1))}
               className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-line bg-bg text-xs font-semibold text-ink hover:border-accent transition"
@@ -395,6 +435,37 @@ export default function SongViewer({
               );
             }
 
+            // 1. Chế độ Gộp dòng (Hợp âm gắn liền trong dòng lời)
+            if (isInlineMode) {
+              return (
+                <div
+                  key={lIdx}
+                  className="leading-loose py-0.5 break-inside-avoid text-ink"
+                >
+                  {line.segments?.map((seg, sIdx) => {
+                    return (
+                      <span key={sIdx} className="inline">
+                        {seg.chord && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveChord(seg.chord!)}
+                            className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md font-bold text-accent dark:text-pick bg-accent/10 dark:bg-accent/20 hover:bg-accent hover:text-white transition-colors text-[0.88em] font-mono leading-none align-baseline cursor-pointer select-none print:text-black print:border print:border-black"
+                            title={`Bấm xem thế bấm của hợp âm ${seg.chord}`}
+                          >
+                            [{seg.chord}]
+                          </button>
+                        )}
+                        <span className="whitespace-pre font-normal print:text-black">
+                          {seg.text}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            }
+
+            // 2. Chế độ Tách dòng (Hợp âm nằm trên lời bài hát - mặc định)
             return (
               <div
                 key={lIdx}
