@@ -2,22 +2,28 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
-import { User, LogIn } from 'lucide-react';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import { LogIn } from 'lucide-react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export function AuthButton() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+
     async function loadUser() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
       } catch {
-        // Chưa cấu hình Supabase hoặc chưa đăng nhập
+        // Chưa cấu hình hoặc lỗi kết nối
       } finally {
         setLoading(false);
       }
@@ -32,7 +38,7 @@ export function AuthButton() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   if (loading) {
     return (
@@ -80,4 +86,3 @@ export function AuthButton() {
     </Link>
   );
 }
-

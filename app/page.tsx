@@ -1,16 +1,66 @@
 import React from 'react';
 import Link from 'next/link';
 import { parseChordPro } from '@/lib/chordpro';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/server';
 import fs from 'fs';
 import path from 'path';
 
-// Đọc 3 bài hát mẫu public domain từ data/songs/
-function getSampleSongs() {
+export const dynamic = 'force-dynamic';
+
+interface DisplaySong {
+  title: string;
+  artist: string;
+  key: string;
+  rhythm?: string;
+  license: string;
+  chords: string[];
+  content: string;
+  slug: string;
+  source: 'database' | 'local';
+}
+
+// 1. Đọc bài hát từ Supabase Database
+async function getDatabaseSongs(): Promise<DisplaySong[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('songs')
+      .select(`
+        title, slug, key, content, chords, license_type,
+        artists:artist_id ( name ),
+        rhythms:rhythm_id ( name )
+      `)
+      .eq('is_verified', true)
+      .eq('takedown_status', 'none')
+      .order('created_at', { ascending: true });
+
+    if (error || !data || data.length === 0) return [];
+
+    return data.map((item: any) => ({
+      title: item.title,
+      artist: item.artists?.name || 'Chưa rõ',
+      key: item.key,
+      rhythm: item.rhythms?.name || 'Ballad',
+      license: item.license_type,
+      chords: Array.isArray(item.chords) ? item.chords : [],
+      content: item.content,
+      slug: item.slug,
+      source: 'database',
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// 2. Fallback đọc 3 bài hát mẫu public domain từ data/songs/
+function getLocalSampleSongs(): DisplaySong[] {
   const songsDir = path.resolve(process.cwd(), 'data/songs');
   if (!fs.existsSync(songsDir)) return [];
 
   const files = ['amazing-grace.cho', 'auld-lang-syne.cho', 'greensleeves.cho'];
-  const songs = [];
+  const songs: DisplaySong[] = [];
 
   for (const f of files) {
     const p = path.join(songsDir, f);
@@ -18,7 +68,17 @@ function getSampleSongs() {
       const content = fs.readFileSync(p, 'utf-8');
       const res = parseChordPro(content);
       if (res.success && res.song) {
-        songs.push(res.song);
+        songs.push({
+          title: res.song.title,
+          artist: res.song.artist,
+          key: res.song.key,
+          rhythm: res.song.rhythm,
+          license: res.song.license,
+          chords: res.song.chords,
+          content: res.song.content,
+          slug: res.song.slug,
+          source: 'local',
+        });
       }
     }
   }
@@ -26,8 +86,10 @@ function getSampleSongs() {
   return songs;
 }
 
-export default function HomePage() {
-  const sampleSongs = getSampleSongs();
+export default async function HomePage() {
+  const dbSongs = await getDatabaseSongs();
+  const songs = dbSongs.length > 0 ? dbSongs : getLocalSampleSongs();
+  const isFromDb = dbSongs.length > 0;
 
   return (
     <div className="space-y-8">
@@ -43,17 +105,24 @@ export default function HomePage() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Cột chính: Danh sách bài hát mẫu */}
+        {/* Cột chính: Danh sách bài hát */}
         <section className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-ink">Bài hát mẫu hợp pháp (Public Domain)</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-ink">Bài hát mẫu hợp pháp (Public Domain)</h2>
+              {isFromDb && (
+                <span className="text-[10px] font-bold bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full">
+                  Live Supabase
+                </span>
+              )}
+            </div>
             <span className="text-xs font-semibold text-muted bg-soft px-3 py-1 rounded-full">
-              {sampleSongs.length} bài hát
+              {songs.length} bài hát
             </span>
           </div>
 
           <div className="space-y-3">
-            {sampleSongs.map((song, i) => (
+            {songs.map((song, i) => (
               <div
                 key={song.slug}
                 className="bg-surface border border-line hover:border-accent rounded-2xl p-4 sm:p-5 transition-colors space-y-3"
@@ -78,7 +147,7 @@ export default function HomePage() {
                       Điệu {song.rhythm || 'Chưa rõ'}
                     </span>
                     <span className="text-[10px] text-muted font-medium bg-soft px-2 py-0.5 rounded-full">
-                      Public Domain
+                      {song.license === 'public_domain' ? 'Public Domain' : song.license}
                     </span>
                   </div>
                 </div>

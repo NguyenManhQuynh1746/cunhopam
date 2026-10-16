@@ -26,7 +26,8 @@ async function importChords() {
   console.log('🎸 Đang khởi động import dữ liệu hợp âm guitar từ @tombatossals/chords-db...');
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 
   if (!supabaseUrl || !serviceRoleKey || supabaseUrl.includes('your-project')) {
     console.error('❌ Lỗi: Cần cấu hình NEXT_PUBLIC_SUPABASE_URL và SUPABASE_SERVICE_ROLE_KEY trong file .env.local');
