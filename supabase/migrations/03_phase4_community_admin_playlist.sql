@@ -116,7 +116,7 @@ security definer
 set search_path = public, extensions, pg_temp
 as $$
 begin
-  if not public.is_admin() then
+  if auth.uid() is not null and not public.is_admin() then
     new.is_verified := old.is_verified;
     new.takedown_status := old.takedown_status;
     new.rejection_reason := old.rejection_reason;
