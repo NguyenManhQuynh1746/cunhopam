@@ -50,14 +50,17 @@ export default function RegisterPage() {
       if (error) {
         setMessage({ type: 'error', text: translateRegisterError(error.message) });
       } else if (data.session) {
-        setMessage({ type: 'success', text: 'Đăng ký thành công! Đang chuyển hướng...' });
+        setMessage({ type: 'success', text: 'Đăng ký thành công! Đang đăng nhập...' });
         router.push('/');
         router.refresh();
       } else {
         setMessage({
           type: 'success',
-          text: 'Đăng ký thành công! Vui lòng kiểm tra email của bạn để xác nhận tài khoản.',
+          text: 'Đăng ký thành công! Đang chuyển đến trang đăng nhập...',
         });
+        setTimeout(() => {
+          router.push('/auth/login');
+        }, 1000);
       }
     } catch {
       setMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ Supabase. Vui lòng kiểm tra .env.local.' });
