@@ -192,7 +192,7 @@ SELECT
     key,
     missing_count,
     missing_chords,
-    total_song_chords
+    total_chords
 FROM find_songs_by_chords(ARRAY['C', 'Am', 'F', 'G', 'Dm'], 20);
 
 -- 2. Kiểm tra trường hợp chuẩn hoá (ví dụ tìm bằng 'A#' hoặc 'Bb', 'C/G')
