@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --ink: #101828;
+  --muted: #5b6579;
+  --line: #c9d0dc;
+  --accent: #2838d8;
+  --accent-dark: #1e2ca8;
+  --ai: #ffffff;
+  --pick: #ffc933;
+  --soft: #e2e7f0;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"],
+.dark {
+  --bg: #0d1220;
+  --surface: #151c30;
+  --ink: #eef1fa;
+  --muted: #9aa5bf;
+  --line: #2c3654;
+  --accent: #8793ff;
+  --accent-dark: #6e7dfc;
+  --ai: #0d1220;
+  --soft: #1f2842;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Custom styles for SVG chords and safe area */
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+svg .ln2 {
+  stroke: var(--ink);
+}
+
+svg .tx {
+  fill: var(--muted);
+}
+

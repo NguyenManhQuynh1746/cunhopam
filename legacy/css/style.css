@@ -1,0 +1,628 @@
+/* ==========================================================================
+   cunhopam - Thư viện hợp âm guitar
+   Style Sheet
+   ========================================================================== */
+
+/* --------------------------------------------------
+   1. CSS Variables & Theme (Light / Dark)
+   -------------------------------------------------- */
+:root {
+  --bg: #eef1f5;
+  --surface: #ffffff;
+  --ink: #101828;
+  --muted: #5b6579;
+  --line: #c9d0dc;
+  --accent: #2838d8;
+  --ai: #ffffff;
+  --pick: #ffc933;
+  --soft: #e2e7f0;
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1220;
+    --surface: #151c30;
+    --ink: #eef1fa;
+    --muted: #9aa5bf;
+    --line: #2c3654;
+    --accent: #8793ff;
+    --ai: #0d1220;
+    --soft: #1f2842;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d1220;
+  --surface: #151c30;
+  --ink: #eef1fa;
+  --muted: #9aa5bf;
+  --line: #2c3654;
+  --accent: #8793ff;
+  --ai: #0d1220;
+  --soft: #1f2842;
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------
+   2. Reset & Base Styles
+   -------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 110px);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  z-index: 10;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+a {
+  color: inherit;
+}
+
+/* --------------------------------------------------
+   3. Layout & Typography
+   -------------------------------------------------- */
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+main {
+  padding: 28px 0 56px;
+  min-height: 70vh;
+}
+
+h1 {
+  font-size: clamp(1.9rem, 5vw, 3.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+  margin: 0 0 12px;
+  max-width: 18ch;
+}
+
+h2 {
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 0 0 10px;
+}
+
+.lead,
+.sub {
+  color: var(--muted);
+  margin: 0;
+  max-width: 56ch;
+}
+
+.hero {
+  margin-bottom: 26px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 16px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------------------
+   4. Header & Navigation
+   -------------------------------------------------- */
+header {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 11;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 60px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+}
+
+.search {
+  flex: 1;
+  max-width: 420px;
+  margin-left: auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 8px 16px;
+  min-width: 0;
+}
+
+.ib {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  height: 38px;
+  min-width: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+nav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: none;
+}
+
+nav a {
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+
+nav a[aria-current="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* --------------------------------------------------
+   5. Buttons & Controls
+   -------------------------------------------------- */
+.btn {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--ai);
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 600;
+  border: 0;
+}
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  background: var(--surface);
+}
+
+.seg button,
+.tl,
+.grp button {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+}
+
+.tl {
+  border: 1px solid var(--line);
+}
+
+[aria-pressed="true"].seg-on,
+.seg [aria-pressed="true"],
+.tl[aria-pressed="true"],
+.tg[aria-pressed="true"],
+.root[aria-pressed="true"],
+.q[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--ai);
+  border-color: var(--accent);
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 16px 0;
+  padding: 10px 0;
+  border-block: 1px solid var(--line);
+}
+
+.grp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px;
+  font-size: 0.9rem;
+}
+
+.grp span {
+  padding: 0 8px;
+  font-weight: 600;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------
+   6. Badges, Tags & Chips
+   -------------------------------------------------- */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tg,
+.q,
+.root {
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 500;
+}
+
+.tg small {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.rt em,
+.tag {
+  font-style: normal;
+  background: var(--pick);
+  color: #101828;
+  border-radius: 999px;
+  padding: 1px 11px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.chip {
+  background: var(--soft);
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------
+   7. Song List & Item
+   -------------------------------------------------- */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+.item:hover {
+  border-color: var(--accent);
+}
+
+.rk {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--muted);
+  width: 30px;
+  text-align: center;
+  letter-spacing: -0.04em;
+}
+
+.mt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mt small,
+.rt small {
+  color: var(--muted);
+}
+
+.cs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.cs i {
+  font-style: normal;
+  background: var(--soft);
+  border-radius: 8px;
+  padding: 0 9px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.rt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+  font-size: 0.85rem;
+}
+
+.empty {
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* --------------------------------------------------
+   8. Song Sheet View
+   -------------------------------------------------- */
+.st {
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  margin: 0 0 2px;
+  max-width: none;
+}
+
+.sa {
+  margin: 0 0 10px;
+  color: var(--muted);
+}
+
+#sheet {
+  overflow-x: auto;
+  padding-top: 6px;
+}
+
+.ln {
+  margin: 0 0 1.1em;
+  line-height: 1.25;
+}
+
+.s {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: bottom;
+}
+
+.c {
+  color: var(--accent);
+  font-weight: 800;
+  min-height: 1.35em;
+  font-size: 0.9em;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.c:hover {
+  text-decoration: underline;
+}
+
+.l {
+  white-space: pre;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 14px 0 0;
+}
+
+/* --------------------------------------------------
+   9. Chord Diagrams & Lookup
+   -------------------------------------------------- */
+.minis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.minis button {
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 12px;
+  padding: 6px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.minis svg {
+  width: 64px;
+  height: auto;
+}
+
+#fc {
+  text-align: center;
+}
+
+#fc svg {
+  width: 170px;
+  height: auto;
+}
+
+.cname {
+  font-size: clamp(3.2rem, 9vw, 5.2rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.cd {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.cd svg {
+  width: min(100%, 260px);
+  height: auto;
+}
+
+.roots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.roots .root {
+  border-radius: 12px;
+  padding: 10px 0;
+  font-weight: 600;
+}
+
+.quals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pop {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.pop button {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pop svg {
+  width: 72px;
+  height: auto;
+}
+
+svg .ln2 {
+  stroke: var(--ink);
+}
+
+svg .tx {
+  fill: var(--muted);
+  font-family: inherit;
+}
+
+/* --------------------------------------------------
+   10. Footer & Responsive Media Queries
+   -------------------------------------------------- */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 24px 0 34px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 820px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .logo span {
+    display: none;
+  }
+  .item {
+    padding: 12px;
+  }
+  .rt small {
+    display: none;
+  }
+}
+
