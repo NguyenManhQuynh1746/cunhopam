@@ -203,5 +203,32 @@ SELECT
 FROM find_songs_by_chords(ARRAY['C/G', 'Am', 'Bb'], 20);
 ```
 
+---
+
+## 9. Cập nhật Cơ sở Dữ liệu Giai đoạn 4 (Migration: Community, Admin, Playlist & Governance)
+
+Ở Giai đoạn 4, hệ thống bổ sung:
+- **`song_revisions`**: Quản lý các phiên bản chỉnh sửa bài hát; khi bài đã duyệt được sửa, nội dung mới sẽ lưu dưới dạng `pending` và bài cũ vẫn hiển thị đến khi admin phê duyệt.
+- **`song_requests` & `song_request_votes`**: Hệ thống gửi yêu cầu hợp âm bài chưa có và cơ chế bình chọn 1 phiếu/tài khoản kèm trigger tự động đồng bộ số phiếu.
+- **`admin_logs`**: Nhật ký ghi lại toàn bộ hoạt động của admin (duyệt, từ chối, gỡ bài, khoá tài khoản, khôi phục phiên bản) dưới dạng giao dịch an toàn.
+- **Trình bảo vệ dữ liệu nhạy cảm**: Trigger chặn tác giả tự duyệt bài bằng cách tự đổi `is_verified` hay `slug`, chặn người dùng tự sửa `profiles.role`, và giới hạn đăng tối đa 5 bài / 5 yêu cầu trong 24 giờ cho tài khoản thường.
+- **Hàm RPC `reorder_playlist`**: Cập nhật thứ tự bài hát trong playlist một cách nguyên tử.
+
+### A. Chạy file Migration trên Supabase SQL Editor
+1. Mở Supabase -> Vào mục **SQL Editor** -> Bấm **"New query"**.
+2. Mở file [supabase/migrations/03_phase4_community_admin_playlist.sql](file:///c:/Users/pc/.antigravity/cunhopam/supabase/migrations/03_phase4_community_admin_playlist.sql), sao chép toàn bộ nội dung và dán vào SQL Editor.
+3. Bấm **"Run"** để thực thi migration.
+
+### B. Chạy file Kiểm thử Bảo mật RLS & Trigger
+1. Mở file [supabase/tests/rls_phase4.sql](file:///c:/Users/pc/.antigravity/cunhopam/supabase/tests/rls_phase4.sql), sao chép toàn bộ nội dung và dán vào SQL Editor.
+2. Bấm **"Run"**.
+3. Xem tab **Messages** bên dưới kết quả để kiểm tra các thông báo:
+   - `✓ TEST 1 ĐẠT: Người dùng không thể tự nâng cấp profiles.role.`
+   - `✓ TEST 2 ĐẠT: Tác giả không thể tự duyệt bài (is_verified được trigger giữ nguyên false).`
+   - `✓ TEST 3 ĐẠT: Quản trị viên không thể tự khoá tài khoản của mình.`
+   - `✓ TEST 4 ĐẠT: Bảng admin_logs được bảo vệ, thu hồi quyền DELETE hoàn toàn.`
+   - `✓ TEST 5 ĐẠT: Trigger trg_request_votes_sync tự động tăng/giảm votes_count.`
+
+
 
 

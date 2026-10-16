@@ -35,7 +35,22 @@ export async function updateSession(request: NextRequest) {
 
   try {
     // Tự động làm mới phiên đăng nhập (refresh token)
-    await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const pathname = request.nextUrl.pathname;
+
+    // Danh sách route yêu cầu đăng nhập
+    const isProtected =
+      pathname.startsWith('/dang-bai') ||
+      pathname.startsWith('/bai-cua-toi') ||
+      pathname.startsWith('/sua-bai') ||
+      pathname === '/playlist/tao';
+
+    if (isProtected && !user) {
+      const loginUrl = new URL('/auth/login', request.url);
+      loginUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   } catch {
     // Bỏ qua lỗi nếu mạng hoặc key chưa hợp lệ
   }

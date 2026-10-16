@@ -9,6 +9,7 @@ import ChordPopup from './ChordPopup';
 import FavoriteButton from './FavoriteButton';
 import CommentSection, { CommentItem } from './CommentSection';
 import ReportModal from './ReportModal';
+import PlaylistModal from '@/components/playlist/PlaylistModal';
 import { suggestCapo } from '@/lib/chords/easy';
 import {
   Printer,
@@ -24,6 +25,7 @@ import {
   ExternalLink,
   FoldVertical,
   Sparkles,
+  ListMusic,
 } from 'lucide-react';
 
 export interface SongDetailData {
@@ -108,6 +110,9 @@ export default function SongViewer({
 
   // 6. Modal báo lỗi / khiếu nại
   const [isReportOpen, setIsReportOpen] = useState(false);
+
+  // 7. Modal thêm vào Playlist
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
 
   // 7. Ghi nhận lượt xem 1 lần duy nhất (React Strict Mode & Session deduping)
   const hasRecordedView = useRef(false);
@@ -277,6 +282,15 @@ export default function SongViewer({
               user={user}
               songSlug={song.slug}
             />
+
+            <button
+              onClick={() => setIsPlaylistModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border border-line bg-surface text-ink hover:border-accent hover:text-accent transition shadow-xs"
+              title="Lưu bài hát vào playlist cá nhân"
+            >
+              <ListMusic className="w-4 h-4 text-accent" />
+              <span className="hidden sm:inline">Lưu Playlist</span>
+            </button>
 
             <button
               onClick={handlePrint}
@@ -653,6 +667,15 @@ export default function SongViewer({
         user={user}
         isOpen={isReportOpen}
         onClose={() => setIsReportOpen(false)}
+      />
+
+      {/* 8. Modal Lưu vào Playlist */}
+      <PlaylistModal
+        songId={song.id}
+        songTitle={song.title}
+        user={user}
+        isOpen={isPlaylistModalOpen}
+        onClose={() => setIsPlaylistModalOpen(false)}
       />
     </div>
   );

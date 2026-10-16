@@ -8,9 +8,11 @@ const NAV_ITEMS = [
   { label: 'Bài hát', href: '/' },
   { label: 'Hợp âm', href: '/hop-am' },
   { label: 'Tìm theo hợp âm', href: '/tim-theo-hop-am' },
+  { label: 'Playlist', href: '/playlist' },
+  { label: 'Yêu cầu', href: '/yeu-cau' },
   { label: 'Bài đã lưu', href: '/da-luu' },
-  { label: 'Điệu', href: '/rhythms' },
-  { label: 'Thể loại', href: '/genres' },
+  { label: 'Đăng bài', href: '/dang-bai' },
+  { label: 'Bài của tôi', href: '/bai-cua-toi' },
 ];
 
 export function Navbar() {

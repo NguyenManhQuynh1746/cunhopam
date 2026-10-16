@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get('next') || '/';
   const supabase = createClient();
 
   const [email, setEmail] = useState('');
@@ -30,7 +32,8 @@ export default function LoginPage() {
         setMessage({ type: 'error', text: error.message || 'Đăng nhập không thành công.' });
       } else {
         setMessage({ type: 'success', text: 'Đăng nhập thành công! Đang chuyển hướng...' });
-        router.push('/');
+        const target = nextUrl.startsWith('/') ? nextUrl : '/';
+        router.push(target);
         router.refresh();
       }
     } catch {
@@ -43,10 +46,11 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setMessage(null);
     try {
+      const target = nextUrl.startsWith('/') ? nextUrl : '/';
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(target)}`,
         },
       });
 
@@ -165,6 +169,14 @@ export default function LoginPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="max-w-md mx-auto my-12 text-center text-muted">Đang tải...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
 
