@@ -26,6 +26,8 @@ import {
   FoldVertical,
   Sparkles,
   ListMusic,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 
 export interface SongDetailData {
@@ -40,6 +42,8 @@ export interface SongDetailData {
   source_url?: string | null;
   license_note?: string | null;
   view_count: number;
+  is_verified?: boolean;
+  takedown_status?: string;
   created_at: string;
   published_at?: string;
   artist_name?: string | null;
@@ -117,7 +121,7 @@ export default function SongViewer({
   // 7. Ghi nhận lượt xem 1 lần duy nhất (React Strict Mode & Session deduping)
   const hasRecordedView = useRef(false);
   useEffect(() => {
-    if (hasRecordedView.current) return;
+    if (hasRecordedView.current || song.is_verified === false) return;
     hasRecordedView.current = true;
 
     // Kiểm tra sessionStorage để tránh gọi trùng khi React Strict Mode remount hoặc chuyển tab
@@ -133,7 +137,7 @@ export default function SongViewer({
     fetch(`/api/songs/${song.id}/view`, {
       method: 'POST',
     }).catch((err) => console.error('Lỗi ghi lượt xem:', err));
-  }, [song.id]);
+  }, [song.id, song.is_verified]);
 
   // 8. Tự cuộn với requestAnimationFrame
   useEffect(() => {
@@ -235,6 +239,24 @@ export default function SongViewer({
 
   return (
     <div className="space-y-6">
+      {/* Thông báo bản xem trước nếu bài chưa được duyệt */}
+      {song.is_verified === false && (
+        <div className="print:hidden p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs sm:text-sm flex items-start gap-3 shadow-xs">
+          <Clock className="w-5 h-5 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+          <div className="space-y-1">
+            <div className="font-bold flex items-center gap-2">
+              <span>Bản xem trước dành cho Tác giả & Quản trị viên</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-extrabold bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                Chờ kiểm duyệt
+              </span>
+            </div>
+            <p className="text-muted leading-relaxed text-xs">
+              Bài hát này hiện chưa hiển thị công khai trên danh mục tìm kiếm chung. Chỉ có bạn (người đăng) và ban quản trị mới có thể xem trang này để kiểm tra cách ngắt dòng, hợp âm và tính năng đổi tông.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 1. Header chi tiết bài hát */}
       <section className="print:hidden space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-line">

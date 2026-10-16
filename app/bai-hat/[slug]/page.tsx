@@ -40,14 +40,12 @@ export default async function SongDetailPage({ params }: Props) {
       const { data, error } = await supabase
         .from('songs')
         .select(`
-          id, title, slug, key, content, chords, license_type, rights_holder, source_url, license_note, view_count, created_at, published_at,
+          id, title, slug, key, content, chords, license_type, rights_holder, source_url, license_note, view_count, is_verified, takedown_status, created_at, published_at,
           artists:artist_id ( name, slug ),
           rhythms:rhythm_id ( name, slug ),
           genres:genre_id ( name, slug )
         `)
         .eq('slug', decodedSlug)
-        .eq('is_verified', true)
-        .eq('takedown_status', 'none')
         .maybeSingle();
 
       if (data && !error) {
@@ -63,6 +61,8 @@ export default async function SongDetailPage({ params }: Props) {
           source_url: data.source_url,
           license_note: data.license_note,
           view_count: data.view_count || 0,
+          is_verified: data.is_verified,
+          takedown_status: data.takedown_status,
           created_at: data.created_at,
           published_at: data.published_at,
           artist_name: (data.artists as any)?.name || null,
