@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "import:chords": "tsx scripts/import-chords.ts",
-    "import:songs": "tsx scripts/import-songs.ts"
+    "import:songs": "tsx scripts/import-songs.ts",
+    "crawl:songs": "tsx scripts/crawl-hopamchuan.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
